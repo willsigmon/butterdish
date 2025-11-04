@@ -176,14 +176,8 @@ export default function Dashboard() {
     animate();
   }, [data?.raised]);
 
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(() => fetchData(true), 45000);
-    return () => clearInterval(interval);
-  }, []);
-
   // Fetch real donors from API
-  const fetchDonors = async () => {
+  const fetchDonors = useCallback(async () => {
     try {
       const response = await fetch('/api/donors');
       if (response.ok) {
@@ -201,13 +195,17 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Error fetching donors:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    if (data) {
-      fetchDonors();
-    }
-  }, [data]);
+    fetchData();
+    fetchDonors(); // Fetch donors on mount
+    const interval = setInterval(() => {
+      fetchData(true);
+      fetchDonors(); // Refresh donors too
+    }, 45000);
+    return () => clearInterval(interval);
+  }, [fetchDonors]);
 
   if (loading) {
     return (
