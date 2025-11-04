@@ -61,7 +61,7 @@ export async function GET() {
       if (scriptContent) {
         const scriptText = $(scriptContent).html() || '';
         // Try to extract transaction data from embedded JSON
-        const transactionMatch = scriptText.match(/transactions["']?\s*:\s*\[(.*?)\]/s);
+        const transactionMatch = scriptText.match(/transactions["']?\s*:\s*\[([\s\S]*?)\]/);
         if (transactionMatch) {
           try {
             const transactionsJson = `[${transactionMatch[1]}]`;
