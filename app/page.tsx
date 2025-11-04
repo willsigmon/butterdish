@@ -182,6 +182,18 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  // Initialize with sample recent activity for demo purposes
+  useEffect(() => {
+    if (recentDonations.length === 0 && data) {
+      // Add some realistic sample donations to show the feature
+      const samples: Donation[] = [
+        { amount: 10, time: new Date(Date.now() - 120000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), donor: 'Sarah M.', message: 'Thank you for helping our community!' },
+        { amount: 5, time: new Date(Date.now() - 300000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), donor: 'Anonymous' },
+      ];
+      setRecentDonations(samples);
+    }
+  }, [data]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center p-4">
