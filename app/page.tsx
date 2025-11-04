@@ -117,10 +117,20 @@ export default function Dashboard() {
     setTimeout(() => setShowNotification(false), 5000);
   };
 
+  const getRelativeTime = (date: Date) => {
+    const now = Date.now();
+    const diff = now - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return 'Just now';
+    if (minutes === 1) return '1 min ago';
+    if (minutes < 60) return `${minutes} min ago`;
+    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  };
+
   const addRecentDonation = (amount: number) => {
     const newDonation: Donation = {
       amount,
-      time: new Date().toLocaleTimeString(),
+      time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
       isNew: true,
     };
     setRecentDonations((prev) => {
@@ -203,12 +213,12 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-4 md:p-8">
       {/* Donation Notification */}
       {showNotification && (
-        <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+        <div className="fixed top-6 right-6 z-50 animate-slide-in-right max-w-sm">
           <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-2xl shadow-2xl border-2 border-green-300 flex items-center gap-3">
-            <div className="text-3xl">🎉</div>
+            <div className="text-4xl animate-bounce">🎉</div>
             <div>
-              <p className="font-bold text-lg">New Donation!</p>
-              <p className="text-green-100">${notificationAmount.toFixed(2)}</p>
+              <p className="font-bold text-xl">New Donation!</p>
+              <p className="text-green-100 text-2xl font-black">${notificationAmount.toFixed(2)}</p>
             </div>
           </div>
         </div>
@@ -244,70 +254,45 @@ export default function Dashboard() {
             </a>
           </div>
           {lastUpdated && (
-            <p className="text-blue-300 text-sm mt-2 flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-2 mt-3">
               <span
                 className={`inline-block w-2 h-2 rounded-full ${
                   refreshing ? 'bg-yellow-400 animate-pulse' : 'bg-green-400'
                 }`}
               ></span>
-              Last updated: {lastUpdated.toLocaleTimeString()}
-            </p>
+              <p className="text-blue-300 text-sm">
+                {refreshing ? 'Updating...' : `Updated ${getRelativeTime(lastUpdated)}`}
+              </p>
+            </div>
           )}
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="lg:col-span-2 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl p-8 md:p-12 shadow-2xl transform hover:scale-[1.02] transition-all duration-300 animate-slide-up">
-            <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
-              <div className="text-center md:text-left">
-                <p className="text-orange-100 text-xl md:text-2xl font-semibold mb-2">
-                  Total Raised
-                </p>
-                <h2 className="text-6xl md:text-8xl font-black text-white mb-4 animate-pulse-slow">
-                  ${displayRaised.toFixed(2)}
-                </h2>
-                <p className="text-orange-100 text-lg md:text-xl">
+          <div className="lg:col-span-2 bg-gradient-to-br from-orange-500 to-orange-600 rounded-3xl p-8 md:p-10 shadow-2xl transform hover:scale-[1.02] transition-all duration-300 animate-slide-up">
+            <div className="flex flex-col items-center text-center gap-4">
+              <p className="text-orange-100 text-2xl font-bold tracking-wide">
+                TOTAL RAISED
+              </p>
+              <h2 className="text-7xl md:text-9xl font-black text-white animate-pulse-slow">
+                ${displayRaised.toFixed(2)}
+              </h2>
+              <div className="flex items-baseline gap-2">
+                <p className="text-orange-100 text-xl md:text-2xl font-semibold">
                   of ${data.goal.toLocaleString()} goal
                 </p>
-              </div>
-              <div className="relative">
-                <svg className="w-32 h-32 md:w-40 md:h-40 transform -rotate-90">
-                  <circle
-                    cx="80"
-                    cy="80"
-                    r="70"
-                    stroke="rgba(255,255,255,0.2)"
-                    strokeWidth="12"
-                    fill="none"
-                  />
-                  <circle
-                    cx="80"
-                    cy="80"
-                    r="70"
-                    stroke="white"
-                    strokeWidth="12"
-                    fill="none"
-                    strokeDasharray={`${2 * Math.PI * 70}`}
-                    strokeDashoffset={`${
-                      2 * Math.PI * 70 * (1 - percentage / 100)
-                    }`}
-                    className="transition-all duration-1000 ease-out"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-4xl md:text-5xl font-black text-white">
-                    {percentage.toFixed(0)}%
-                  </span>
-                </div>
+                <span className="text-orange-200 text-lg">•</span>
+                <p className="text-orange-100 text-xl md:text-2xl font-semibold">
+                  {Math.max(percentage, 0.1).toFixed(1)}%
+                </p>
               </div>
             </div>
           </div>
 
           <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-3xl p-8 shadow-2xl transform hover:scale-[1.02] transition-all duration-300 animate-slide-up animation-delay-100">
             <div className="text-center">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 rounded-full mb-4">
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-white/20 rounded-full mb-4">
                 <svg
-                  className="w-10 h-10 text-white"
+                  className="w-14 h-14 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -333,32 +318,38 @@ export default function Dashboard() {
         <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 md:p-8 mb-8 shadow-2xl animate-slide-up animation-delay-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-white text-2xl font-bold">Campaign Progress</h3>
-            <span className="text-blue-200 text-lg font-semibold">
-              ${(data.goal - data.raised).toFixed(2)} to go
+            <span className="text-orange-400 text-xl font-bold">
+              ${(data.goal - data.raised).toFixed(0)} to go
             </span>
           </div>
-          <div className="relative h-8 bg-white/20 rounded-full overflow-hidden">
-            <div
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-orange-400 to-orange-600 transition-all duration-1000 ease-out rounded-full flex items-center justify-end pr-4"
-              style={{ width: `${Math.min(percentage, 100)}%` }}
-            >
-              {percentage > 10 && (
-                <span className="text-white font-bold text-sm">
-                  {percentage.toFixed(1)}%
-                </span>
-              )}
+          <div className="relative">
+            <div className="relative h-10 bg-white/20 rounded-full overflow-hidden">
+              <div
+                className="absolute inset-y-0 left-0 bg-gradient-to-r from-orange-400 to-orange-600 transition-all duration-1000 ease-out rounded-full"
+                style={{ width: `${Math.max(Math.min(percentage, 100), 2)}%` }}
+              ></div>
+            </div>
+            {/* Milestone markers */}
+            <div className="absolute inset-0 flex items-center justify-between px-1 pointer-events-none">
+              {[25, 50, 75].map((milestone) => (
+                <div
+                  key={milestone}
+                  className="w-0.5 h-10 bg-white/40"
+                  style={{ marginLeft: `${milestone - 1}%` }}
+                />
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-slide-up animation-delay-300">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-up animation-delay-300">
           {/* Campaign Image */}
           {data.cover_image && (
-            <div className="lg:col-span-2 bg-white/10 backdrop-blur-lg rounded-3xl overflow-hidden shadow-2xl transform hover:scale-[1.02] transition-all duration-300">
+            <div className="bg-white/10 backdrop-blur-lg rounded-3xl overflow-hidden shadow-2xl transform hover:scale-[1.02] transition-all duration-300">
               <img
                 src={data.cover_image}
                 alt="Campaign"
-                className="w-full h-full min-h-[300px] object-cover"
+                className="w-full h-80 object-cover"
               />
             </div>
           )}
@@ -368,16 +359,10 @@ export default function Dashboard() {
             <div className="flex items-center gap-2 mb-4">
               <svg
                 className="w-6 h-6 text-orange-400"
-                fill="none"
-                stroke="currentColor"
+                fill="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                />
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
               </svg>
               <h3 className="text-xl font-bold text-white">Recent Support</h3>
             </div>
@@ -417,12 +402,14 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <p className="text-blue-300 text-sm">
-                  Tracking donations in real-time...
-                </p>
-                <p className="text-blue-400 text-xs mt-2">
-                  New donations will appear here!
+              <div className="text-center py-12">
+                <div className="inline-block animate-pulse mb-4">
+                  <svg className="w-16 h-16 text-blue-400/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <p className="text-blue-300 font-semibold">
+                  Tracking live donations
                 </p>
               </div>
             )}
@@ -441,27 +428,27 @@ export default function Dashboard() {
         </div>
 
         {/* Impact Statement */}
-        <div className="mt-8 bg-gradient-to-r from-blue-600/30 to-purple-600/30 backdrop-blur-lg rounded-3xl p-6 md:p-8 shadow-2xl animate-slide-up animation-delay-400 border border-blue-400/20">
+        <div className="mt-8 bg-gradient-to-br from-orange-500/20 to-blue-600/20 backdrop-blur-lg rounded-3xl p-6 md:p-8 shadow-2xl animate-slide-up animation-delay-400 border border-orange-400/30">
           <div className="text-center">
             <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">
-              Your Impact Matters 💡
+              Your Impact Matters 🤝
             </h3>
             <p className="text-blue-200 text-base md:text-lg max-w-3xl mx-auto">
               HTI converts donated laptops into Chromebooks and provides them to families in underserved communities.
               Every dollar helps bridge the digital divide and opens doors to education and employment opportunities.
             </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-sm">
-              <div className="flex items-center gap-2 text-blue-200">
-                <span className="text-2xl">💻</span>
-                <span>Free Chromebooks</span>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-8 text-base">
+              <div className="flex items-center gap-2 text-blue-100">
+                <span className="text-3xl">💻</span>
+                <span className="font-semibold">Free Chromebooks</span>
               </div>
-              <div className="flex items-center gap-2 text-blue-200">
-                <span className="text-2xl">📚</span>
-                <span>Educational Access</span>
+              <div className="flex items-center gap-2 text-blue-100">
+                <span className="text-3xl">📚</span>
+                <span className="font-semibold">Educational Access</span>
               </div>
-              <div className="flex items-center gap-2 text-blue-200">
-                <span className="text-2xl">💼</span>
-                <span>Job Opportunities</span>
+              <div className="flex items-center gap-2 text-blue-100">
+                <span className="text-3xl">💼</span>
+                <span className="font-semibold">Job Opportunities</span>
               </div>
             </div>
           </div>
@@ -470,9 +457,9 @@ export default function Dashboard() {
         <footer className="mt-12 text-center text-blue-300 text-sm animate-fade-in animation-delay-500">
           <div className="flex flex-col items-center gap-2">
             <p className="text-base">
-              Built with 💛 for <a href="https://hubzonetech.org" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300 font-semibold transition-colors">HUBZone Technology Initiative</a>
+              Built with 💛 for <a href="https://hubzonetech.org" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300 font-semibold transition-colors underline decoration-orange-400/50 hover:decoration-orange-300 underline-offset-2">HUBZone Technology Initiative</a>
             </p>
-            <p className="text-xs">Live tracking • Updates every 45 seconds • Campaign ID: {data.id}</p>
+            <p className="text-xs text-blue-400">Live tracking • Updates every 45 seconds</p>
           </div>
         </footer>
       </div>
