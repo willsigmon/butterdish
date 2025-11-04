@@ -363,11 +363,11 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-slide-up animation-delay-300">
           {/* Campaign Image */}
           {data.cover_image && (
-            <div className="bg-white/10 backdrop-blur-lg rounded-3xl overflow-hidden shadow-2xl transform hover:scale-[1.02] transition-all duration-300">
+            <div className="bg-white/10 backdrop-blur-lg rounded-3xl overflow-hidden shadow-2xl transform hover:scale-[1.02] transition-all duration-300 h-full min-h-[400px]">
               <img
                 src={data.cover_image}
                 alt="Campaign"
-                className="w-full h-80 object-cover"
+                className="w-full h-full object-cover"
               />
             </div>
           )}
