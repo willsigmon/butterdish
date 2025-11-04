@@ -64,7 +64,7 @@
 
 ## Live URL
 
-**Dashboard**: https://butterdish.vercel.app
+**Dashboard**: https://giving25.vercel.app
 
 ## What's Next
 
