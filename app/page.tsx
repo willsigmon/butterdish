@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 
 interface CampaignData {
@@ -16,6 +16,12 @@ interface CampaignData {
   timestamp: string;
 }
 
+interface Donation {
+  amount: number;
+  time: string;
+  isNew?: boolean;
+}
+
 export default function Dashboard() {
   const [data, setData] = useState<CampaignData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,6 +31,9 @@ export default function Dashboard() {
   const [displayRaised, setDisplayRaised] = useState(0);
   const previousRaisedRef = useRef(0);
   const celebratedMilestonesRef = useRef<Set<number>>(new Set());
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationAmount, setNotificationAmount] = useState(0);
+  const [recentDonations, setRecentDonations] = useState<Donation[]>([]);
 
   const fetchData = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -34,7 +43,10 @@ export default function Dashboard() {
       const campaignData = await response.json();
       
       if (data && campaignData.raised > data.raised) {
+        const donationAmount = campaignData.raised - data.raised;
         triggerConfetti();
+        showDonationNotification(donationAmount);
+        addRecentDonation(donationAmount);
       }
 
       checkMilestones(campaignData.raised_percentage);
@@ -97,6 +109,29 @@ export default function Dashboard() {
       }
     };
     frame();
+  };
+
+  const showDonationNotification = (amount: number) => {
+    setNotificationAmount(amount);
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 5000);
+  };
+
+  const addRecentDonation = (amount: number) => {
+    const newDonation: Donation = {
+      amount,
+      time: new Date().toLocaleTimeString(),
+      isNew: true,
+    };
+    setRecentDonations((prev) => {
+      const updated = [newDonation, ...prev].slice(0, 5);
+      setTimeout(() => {
+        setRecentDonations((current) =>
+          current.map((d) => ({ ...d, isNew: false }))
+        );
+      }, 3000);
+      return updated;
+    });
   };
 
   useEffect(() => {
@@ -166,17 +201,48 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        <header className="text-center mb-8 md:mb-12 animate-fade-in">
-          <div className="inline-flex items-center gap-3 mb-4">
-            <div className="h-12 w-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full animate-pulse-slow"></div>
-            <h1 className="text-4xl md:text-6xl font-bold text-white">
-              ButterDish
-            </h1>
+      {/* Donation Notification */}
+      {showNotification && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in-right">
+          <div className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-2xl shadow-2xl border-2 border-green-300 flex items-center gap-3">
+            <div className="text-3xl">🎉</div>
+            <div>
+              <p className="font-bold text-lg">New Donation!</p>
+              <p className="text-green-100">${notificationAmount.toFixed(2)}</p>
+            </div>
           </div>
-          <p className="text-blue-200 text-lg md:text-xl">
-            Live Campaign Dashboard for HTI
-          </p>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto">
+        {/* HTI Branding Header */}
+        <header className="text-center mb-8 md:mb-12 animate-fade-in">
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="h-16 w-16 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full animate-pulse-slow flex items-center justify-center text-white text-2xl font-bold">
+              HTI
+            </div>
+            <div className="text-left">
+              <h1 className="text-3xl md:text-5xl font-black text-white leading-tight">
+                HTI Giving Season
+              </h1>
+              <p className="text-orange-400 text-lg md:text-xl font-semibold">
+                Gift of Access Campaign
+              </p>
+            </div>
+          </div>
+          <div className="max-w-3xl mx-auto">
+            <p className="text-blue-200 text-base md:text-lg mb-3">
+              Help us bridge the digital divide. Every contribution provides laptops and technology access to those who need it most in our communities.
+            </p>
+            <a
+              href="https://hubzonetech.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-orange-400 hover:text-orange-300 text-sm font-semibold transition-colors inline-flex items-center gap-1"
+            >
+              Learn more at hubzonetech.org →
+            </a>
+          </div>
           {lastUpdated && (
             <p className="text-blue-300 text-sm mt-2 flex items-center justify-center gap-2">
               <span
@@ -285,58 +351,129 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-up animation-delay-300">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-slide-up animation-delay-300">
+          {/* Campaign Image */}
           {data.cover_image && (
-            <div className="bg-white/10 backdrop-blur-lg rounded-3xl overflow-hidden shadow-2xl transform hover:scale-[1.02] transition-all duration-300">
+            <div className="lg:col-span-2 bg-white/10 backdrop-blur-lg rounded-3xl overflow-hidden shadow-2xl transform hover:scale-[1.02] transition-all duration-300">
               <img
                 src={data.cover_image}
                 alt="Campaign"
-                className="w-full h-64 object-cover"
+                className="w-full h-full min-h-[300px] object-cover"
               />
             </div>
           )}
 
-          <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-8 shadow-2xl">
-            <h3 className="text-2xl font-bold text-white mb-4">{data.title}</h3>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-orange-500/20 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-orange-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+          {/* Recent Donations Feed */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 shadow-2xl">
+            <div className="flex items-center gap-2 mb-4">
+              <svg
+                className="w-6 h-6 text-orange-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                />
+              </svg>
+              <h3 className="text-xl font-bold text-white">Recent Support</h3>
+            </div>
+            
+            {recentDonations.length > 0 ? (
+              <div className="space-y-3">
+                {recentDonations.map((donation, index) => (
+                  <div
+                    key={`${donation.time}-${index}`}
+                    className={`p-4 rounded-xl transition-all duration-500 ${
+                      donation.isNew
+                        ? 'bg-green-500/30 border-2 border-green-400 scale-105'
+                        : 'bg-white/5 border border-white/10'
+                    }`}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-blue-200 text-sm">Campaign ID</p>
-                  <p className="text-white font-semibold">{data.id}</p>
-                </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="text-2xl">
+                          {donation.isNew ? '✨' : '💛'}
+                        </div>
+                        <div>
+                          <p className="text-white font-bold text-lg">
+                            ${donation.amount.toFixed(2)}
+                          </p>
+                          <p className="text-blue-200 text-xs">
+                            {donation.time}
+                          </p>
+                        </div>
+                      </div>
+                      {donation.isNew && (
+                        <span className="text-green-300 text-xs font-semibold animate-pulse">
+                          NEW!
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-blue-300 text-sm">
+                  Tracking donations in real-time...
+                </p>
+                <p className="text-blue-400 text-xs mt-2">
+                  New donations will appear here!
+                </p>
+              </div>
+            )}
+            
+            <div className="mt-6 pt-4 border-t border-white/10">
               <a
                 href={data.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block w-full px-6 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-center rounded-xl font-bold text-lg transition-all transform hover:scale-105 shadow-lg"
+                className="block w-full px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-center rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg"
               >
-                View Campaign →
+                Donate Now →
               </a>
             </div>
           </div>
         </div>
 
-        <footer className="mt-12 text-center text-blue-300 text-sm animate-fade-in animation-delay-400">
-          <p>
-            Built with 💛 for HUBZone Technology Initiative
-          </p>
-          <p className="mt-2">Data refreshes every 45 seconds</p>
+        {/* Impact Statement */}
+        <div className="mt-8 bg-gradient-to-r from-blue-600/30 to-purple-600/30 backdrop-blur-lg rounded-3xl p-6 md:p-8 shadow-2xl animate-slide-up animation-delay-400 border border-blue-400/20">
+          <div className="text-center">
+            <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              Your Impact Matters 💡
+            </h3>
+            <p className="text-blue-200 text-base md:text-lg max-w-3xl mx-auto">
+              HTI converts donated laptops into Chromebooks and provides them to families in underserved communities.
+              Every dollar helps bridge the digital divide and opens doors to education and employment opportunities.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-6 text-sm">
+              <div className="flex items-center gap-2 text-blue-200">
+                <span className="text-2xl">💻</span>
+                <span>Free Chromebooks</span>
+              </div>
+              <div className="flex items-center gap-2 text-blue-200">
+                <span className="text-2xl">📚</span>
+                <span>Educational Access</span>
+              </div>
+              <div className="flex items-center gap-2 text-blue-200">
+                <span className="text-2xl">💼</span>
+                <span>Job Opportunities</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <footer className="mt-12 text-center text-blue-300 text-sm animate-fade-in animation-delay-500">
+          <div className="flex flex-col items-center gap-2">
+            <p className="text-base">
+              Built with 💛 for <a href="https://hubzonetech.org" target="_blank" rel="noopener noreferrer" className="text-orange-400 hover:text-orange-300 font-semibold transition-colors">HUBZone Technology Initiative</a>
+            </p>
+            <p className="text-xs">Live tracking • Updates every 45 seconds • Campaign ID: {data.id}</p>
+          </div>
         </footer>
       </div>
 
@@ -397,6 +534,25 @@ export default function Dashboard() {
 
         .animation-delay-400 {
           animation-delay: 0.4s;
+        }
+
+        .animation-delay-500 {
+          animation-delay: 0.5s;
+        }
+
+        @keyframes slide-in-right {
+          from {
+            opacity: 0;
+            transform: translateX(100%);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        .animate-slide-in-right {
+          animation: slide-in-right 0.5s ease-out;
         }
       `}</style>
     </div>
