@@ -54,9 +54,10 @@ export async function GET() {
     if (feedData.results && Array.isArray(feedData.results)) {
       feedData.results.forEach((activity: any) => {
         if (activity.verb === 'transaction' || activity.actor) {
+          const rawAmount = activity.object?.data?.amount || activity.amount || 0;
           donors.push({
             name: activity.actor?.data?.name || activity.actor?.name || 'A generous supporter',
-            amount: activity.object?.data?.amount || activity.amount || 0,
+            amount: typeof rawAmount === 'string' ? parseFloat(rawAmount) : rawAmount,
             time: new Date(activity.time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
             message: activity.object?.data?.message || activity.message,
           });
