@@ -182,15 +182,30 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Initialize with sample recent activity for demo purposes
+  // Fetch real donors from API
+  const fetchDonors = async () => {
+    try {
+      const response = await fetch('/api/donors');
+      if (response.ok) {
+        const { donors } = await response.json();
+        if (donors && donors.length > 0) {
+          const donorData: Donation[] = donors.map((d: any) => ({
+            amount: d.amount,
+            time: d.time,
+            donor: d.name,
+            message: d.message,
+          }));
+          setRecentDonations(donorData);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching donors:', error);
+    }
+  };
+
   useEffect(() => {
-    if (recentDonations.length === 0 && data) {
-      // Add some realistic sample donations to show the feature
-      const samples: Donation[] = [
-        { amount: 10, time: new Date(Date.now() - 120000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), donor: 'Sarah M.', message: 'Thank you for helping our community!' },
-        { amount: 5, time: new Date(Date.now() - 300000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }), donor: 'Anonymous' },
-      ];
-      setRecentDonations(samples);
+    if (data) {
+      fetchDonors();
     }
   }, [data]);
 
