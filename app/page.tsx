@@ -20,6 +20,8 @@ interface Donation {
   amount: number;
   time: string;
   isNew?: boolean;
+  donor?: string;
+  message?: string;
 }
 
 export default function Dashboard() {
@@ -46,7 +48,9 @@ export default function Dashboard() {
         const donationAmount = campaignData.raised - data.raised;
         triggerConfetti();
         showDonationNotification(donationAmount);
-        addRecentDonation(donationAmount);
+        // Try to extract donor info (Givebutter loads this client-side via GetStream)
+        // For now, we'll show "A generous supporter" until we can integrate GetStream
+        addRecentDonation(donationAmount, 'A generous supporter');
       }
 
       checkMilestones(campaignData.raised_percentage);
@@ -127,11 +131,13 @@ export default function Dashboard() {
     return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   };
 
-  const addRecentDonation = (amount: number) => {
+  const addRecentDonation = (amount: number, donor?: string, message?: string) => {
     const newDonation: Donation = {
       amount,
       time: new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }),
       isNew: true,
+      donor: donor || 'Anonymous',
+      message,
     };
     setRecentDonations((prev) => {
       const updated = [newDonation, ...prev].slice(0, 5);
@@ -372,32 +378,47 @@ export default function Dashboard() {
                 {recentDonations.map((donation, index) => (
                   <div
                     key={`${donation.time}-${index}`}
-                    className={`p-4 rounded-xl transition-all duration-500 ${
+                    className={`p-4 rounded-xl transition-all duration-500 animate-slide-down ${
                       donation.isNew
-                        ? 'bg-green-500/30 border-2 border-green-400 scale-105'
+                        ? 'bg-green-500/30 border-2 border-green-400'
                         : 'bg-white/5 border border-white/10'
                     }`}
+                    style={{
+                      animationDelay: `${index * 50}ms`,
+                      transformOrigin: 'top center',
+                    }}
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="text-2xl">
-                          {donation.isNew ? '✨' : '💛'}
-                        </div>
-                        <div>
-                          <p className="text-white font-bold text-lg">
-                            ${donation.amount.toFixed(2)}
-                          </p>
-                          <p className="text-blue-200 text-xs">
-                            {donation.time}
-                          </p>
-                        </div>
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm">
+                        {donation.donor ? donation.donor.charAt(0).toUpperCase() : '?'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-bold text-base truncate">
+                          {donation.donor || 'Anonymous'}
+                        </p>
+                        <p className="text-blue-200 text-xs">
+                          {donation.time}
+                        </p>
                       </div>
                       {donation.isNew && (
-                        <span className="text-green-300 text-xs font-semibold animate-pulse">
-                          NEW!
+                        <span className="flex-shrink-0 px-2 py-1 bg-green-400/20 text-green-300 text-xs font-bold rounded-full animate-pulse">
+                          NEW
                         </span>
                       )}
                     </div>
+                    <div className="flex items-center justify-between pl-13">
+                      <p className="text-orange-400 font-black text-xl">
+                        ${donation.amount.toFixed(2)}
+                      </p>
+                      <div className="text-xl">
+                        {donation.isNew ? '✨' : '💛'}
+                      </div>
+                    </div>
+                    {donation.message && (
+                      <p className="text-blue-200 text-sm mt-2 pl-13 italic">
+                        "{donation.message}"
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -540,6 +561,21 @@ export default function Dashboard() {
 
         .animate-slide-in-right {
           animation: slide-in-right 0.5s ease-out;
+        }
+
+        @keyframes slide-down {
+          from {
+            opacity: 0;
+            transform: translateY(-20px) scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        .animate-slide-down {
+          animation: slide-down 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
       `}</style>
     </div>
